@@ -75,6 +75,22 @@ async function fetchData() {
 app.get("/routes", async (req, res) => {
   await fetchData();
 
+
+  const { from, to, company, sortField, sortOrder } = req.query;
+  // Filters
+  if (from) {
+    currentData = currentData.filter(route => route.from.toLowerCase() === from.toLowerCase());
+  }
+  if (to) {
+    currentData = currentData.filter(route => route.to.toLowerCase() === to.toLowerCase());
+  }
+  if (company) {
+    currentData = currentData.map(route => ({
+      ...route,
+      providers: route.providers.filter(p => p.companyName.toLowerCase() === company.toLowerCase())
+    })).filter(route => route.providers.length > 0);
+  }
+
   res.json({
     validUntil: rawData.validUntil,
     routes: currentData
