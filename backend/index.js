@@ -11,6 +11,7 @@ const PORT = 8080;
 const COSMOS_API_URL = "https://cosmosodyssey.azurewebsites.net/api/v1.0/TravelPrices";
 
 let allLatestData = [];
+let rawData = null;
 let currentData = null;
 
 async function fetchData() {
@@ -24,7 +25,7 @@ async function fetchData() {
     }
 
     const data = await response.json();
-    // currentData = data;
+    rawData = data;
 
     allLatestData.push(data);
     if (allLatestData.length > 15) {
@@ -71,11 +72,18 @@ async function fetchData() {
   }
 }
 
+app.get("/routes", async (req, res) => {
+  await fetchData();
 
+  res.json({
+    validUntil: rawData.validUntil,
+    routes: currentData
+  });
+});
 
 app.get("/", async (req, res) => {
   await fetchData();
-  res.json(currentData);
+  res.json(rawData.validUntil);
 });
 
 app.listen(PORT, () => {

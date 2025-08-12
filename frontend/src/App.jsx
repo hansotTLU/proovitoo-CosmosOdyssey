@@ -1,35 +1,55 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useEffect, useState } from "react";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [routes, setRoutes] = useState([]);
+  const [validUntil, setValidUntil] = useState("");
+
+  useEffect(() => {
+    fetch(`http://localhost:8080/routes`)
+      .then(res => res.json())
+      .then(data => {
+        setRoutes(data.routes || []);
+        setValidUntil(data.validUntil || "");
+      })
+      .catch(err => console.error("Error fetching routes:", err));
+  }, []);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div style={{ padding: "20px" }}>
+      <h1>🚀 Cosmos Odyssey</h1>
+      <p>Price list valid until: {validUntil}</p>
+
+      {routes.length > 0 ? (
+        routes.map((route) => (
+          <div
+            key={route.legId}
+            style={{
+              border: "1px solid #ccc",
+              margin: "10px",
+              padding: "10px",
+              borderRadius: "5px",
+            }}
+          >
+            <h3>
+              {route.from} → {route.to}
+            </h3>
+            <p>Distance: {route.distance} km</p>
+            <h4>Providers:</h4>
+            <ul>
+              {route.providers.map((p) => (
+                <li key={p.providerId}>
+                  {p.companyName} - ${p.price} - {p.travelTimeHours}h{" "}
+                  {p.travelTimeMinutes}m
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      ) : (
+        <p>No routes found.</p>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
