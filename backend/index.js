@@ -91,6 +91,32 @@ app.get("/routes", async (req, res) => {
     })).filter(route => route.providers.length > 0);
   }
 
+  // Sorting
+  if (sortField) {
+    currentData = currentData.map(route => {
+      const sortedProviders = [...route.providers];
+
+      if (sortField === 'price') {
+        sortedProviders.sort((a, b) =>
+          sortOrder === 'descending' ? b.price - a.price : a.price - b.price
+        );
+      } else if (sortField === 'time') {
+        sortedProviders.sort((a, b) => {
+          const timeA = a.travelTimeHours * 60 + a.travelTimeMinutes;
+          const timeB = b.travelTimeHours * 60 + b.travelTimeMinutes;
+          return sortOrder === 'descending' ? timeB - timeA : timeA - timeB;
+        });
+      }
+      return { ...route, providers: sortedProviders };
+    });
+
+    if (sortField === 'distance') {
+      currentData.sort((a, b) =>
+        sortOrder === 'descending' ? b.distance - a.distance : a.distance - b.distance
+      );
+    }
+  }
+
   res.json({
     validUntil: rawData.validUntil,
     routes: currentData
