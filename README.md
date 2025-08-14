@@ -1,5 +1,4 @@
-# proovitoo-CosmosOdessey
-Proovitöö praktikaks
+# Proovitöö: CosmosOdessey
 
 ## Kuidas käivitada
 1. Minna nii backend'i kausta kui ka frontendi kausta ja mõlemas kaustas terminali kirjutada "npm install" ja vajutada enter.
