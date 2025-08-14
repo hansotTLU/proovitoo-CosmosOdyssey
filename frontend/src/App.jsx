@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormHelperText from '@mui/material/FormHelperText';
@@ -13,6 +13,9 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
+import Paper from '@mui/material/Paper';
+import { styled } from '@mui/material/styles';
 
 function App() {
   const [routes, setRoutes] = useState([]);
@@ -42,7 +45,7 @@ function App() {
           ...new Set(data.routes.flatMap(r => [r.from, r.to]))
         ];
         const companies = [
-          ...new Set(data.routes.flatMap(route => 
+          ...new Set(data.routes.flatMap(route =>
             route.providers.map(p => p.companyName)
           ))
         ];
@@ -53,23 +56,34 @@ function App() {
   }, []);
 
   useEffect(() => {
-      const params = new URLSearchParams();
-      if (from) params.append("from", from);
-      if (to) params.append("to", to);
-      if (company) params.append("company", company);
-      if (sortField) params.append("sortField", sortField);
-      if (sortOrder) params.append("sortOrder", sortOrder);
+    const params = new URLSearchParams();
+    if (from) params.append("from", from);
+    if (to) params.append("to", to);
+    if (company) params.append("company", company);
+    if (sortField) params.append("sortField", sortField);
+    if (sortOrder) params.append("sortOrder", sortOrder);
   
-      fetch(`http://localhost:8080/routes?${params.toString()}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setRoutes(data.routes);
-          setValidUntil(data.validUntil);
-        })
-        .catch((err) => console.error("Error fetching routes:", err));
+    fetch(`http://localhost:8080/routes?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setRoutes(data.routes);
+        setValidUntil(data.validUntil);
+      })
+      .catch((err) => console.error("Error fetching routes:", err));
   }, [from, to, company, sortField, sortOrder]);
+
+  const Item = styled(Paper)(({ theme }) => ({
+    backgroundColor: '#778DA5',
+    ...theme.typography.body2,
+    padding: theme.spacing(1),
+    textAlign: 'center',
+    color: (theme.vars ?? theme).palette.text.secondary,
+    ...theme.applyStyles('dark', {
+      backgroundColor: '#1A2027',
+    }),
+  }));
   
-  const placeReservation = async ( firstName, lastName, legId, price, time, chosenCompany ) => {
+  const placeReservation = async (firstName, lastName, legId, price, time, chosenCompany) => {
     if (!firstName || !lastName) {
       console.warn("No success, field cannot be empty");
     } else {
@@ -104,160 +118,187 @@ function App() {
     }
   };
 
+
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>🚀 Cosmos Odyssey</h1>
-      <p>Price list valid until: {validUntil}</p>
-
-      {/* Filters */}
-      <div style={{ marginBottom: "20px" }}>
-        <FormControl sx={{ m: 1, minWidth: 120 }}>
-          <InputLabel id="from-label">From</InputLabel>
-          <Select
-            labelId="from-label"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-          >
-            <MenuItem value="">
-              <em>None</em>
-            </MenuItem>
-            {allPlanets.map((destination) => (
-              <MenuItem key={destination} value={destination}>
-                {destination}
-              </MenuItem>
-            ))}
-          </Select>
-          <FormHelperText>Select departure planet</FormHelperText>
-        </FormControl>
-        
-        <FormControl sx={{ m: 1, minWidth: 120 }}>
-          <InputLabel id="to-label">To</InputLabel>
-          <Select
-            labelId="to-label"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-          >
-            <MenuItem value="">
-              <em>None</em>
-            </MenuItem>
-            {allPlanets.map((destination) => (
-              <MenuItem key={destination} value={destination}>
-                {destination}
-              </MenuItem>
-            ))}
-          </Select>
-          <FormHelperText>Select departure planet</FormHelperText>
-        </FormControl>
-
-        <Autocomplete
-          disablePortal
-          options={allCompanies}
-          value={company}
-          onChange={(newValue) => setCompany(newValue || '')}
-          sx={{ width: 300 }}
-          renderInput={(params) => <TextField {...params} label="Company" />}
-        />
-
-        <FormControl sx={{ m: 1, minWidth: 120 }}>
-          <InputLabel id="sort-field-label">Sort By</InputLabel>
-          <Select
-            labelId="sort-field-label"
-            value={sortField}
-            onChange={(e) => setSortField(e.target.value)}
-          >
-            <MenuItem value="price">Price</MenuItem>
-            <MenuItem value="distance">Distance</MenuItem>
-            <MenuItem value="time">Travel Time</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl sx={{ m: 1, minWidth: 120 }}>
-          <InputLabel id="sort-order-label">Order</InputLabel>
-          <Select
-            labelId="sort-order-label"
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-          >
-            <MenuItem value="ascending">Ascending</MenuItem>
-            <MenuItem value="descending">Descending</MenuItem>
-          </Select>
-        </FormControl>
-      </div>
-
-      <div>
-        {routes.length > 0 ? (
-          routes.map((route) => (
-            <div
-              key={route.legId}
-              style={{
-                border: "1px solid #ccc",
-                margin: "10px",
-                padding: "10px",
-                borderRadius: "5px",
-              }}
-            >
-              <h3>
-                {route.from} → {route.to}
-              </h3>
-              <p>Distance: {route.distance.toLocaleString()} km</p>
-              <h4>Providers:</h4>
-                {route.providers.map((p, index) => (
-                  <Accordion key={p.companyName + index}>
-                    <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    aria-controls="panel1-content"
-                    id="panel1-header"
-                  >
-                    <ListItemText
-                      primary={`${p.companyName} - $${p.price.toLocaleString()}`}
-                      secondary={`${p.travelTimeHours}h ${p.travelTimeMinutes}m`}
-                    />
-                      </AccordionSummary>
-                    <AccordionDetails>
-                    <Box
-                      component="form"
-                      sx={{ '& .MuiTextField-root': { m: 1, width: '25ch' } }}
-                      noValidate
-                      autoComplete="off"
+    <Box sx={{
+      width: '100%',
+      paddingTop: 10,
+      paddingBottom: 10,
+      borderRadius: 1,
+      justifyContent: 'center'
+    }}>
+      <Stack spacing={2}>
+        <Item>
+          <h1>🚀 Cosmos Odyssey 🪐</h1>
+          <p>
+            Price list valid until: {validUntil && new Date(validUntil).toLocaleString('sv-SE', {
+              hour12: false
+            }).replace('T', ' ')}
+          </p>
+        </Item>
+        <Item>
+          {/* Filters */}
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Item>
+              <FormControl sx={{ m: 1, minWidth: 120}}>
+                <InputLabel id="from-label">From</InputLabel>
+                <Select
+                  labelId="from-label"
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                  sx={{ backgroundColor: '#f5f5f5ff'}}
+                >
+                  <MenuItem value="">
+                    <em>None</em>
+                  </MenuItem>
+                  {allPlanets.map((destination) => (
+                    <MenuItem key={destination} value={destination}>
+                      {destination}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText>Select departure planet</FormHelperText>
+              </FormControl>
+            </Item>
+            <Item>
+              <FormControl sx={{ m: 1, minWidth: 120 }}>
+                <InputLabel id="to-label">To</InputLabel>
+                <Select
+                  labelId="to-label"
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                  sx={{ backgroundColor: '#f5f5f5ff'}}
+                >
+                  <MenuItem value="">
+                    <em>None</em>
+                  </MenuItem>
+                  {allPlanets.map((destination) => (
+                    <MenuItem key={destination} value={destination}>
+                      {destination}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText>Select departure planet</FormHelperText>
+              </FormControl>
+            </Item>
+            <Item>
+              <Autocomplete
+                disablePortal
+                options={allCompanies}
+                value={company}
+                onChange={(event, newValue) => setCompany(newValue || '')}
+                sx={{ width: 200, backgroundColor: '#f5f5f5ff', borderRadius: 1}}
+                renderInput={(params) => <TextField {...params} label="Company" />}
+              />
+              <FormHelperText>Select company</FormHelperText>
+            </Item>
+            <Item>
+              <FormControl sx={{ m: 1, minWidth: 120 }}>
+                <Select
+                  labelId="sort-label"
+                  value={sortField}
+                  onChange={(e) => setSortField(e.target.value)}
+                  sx={{ backgroundColor: '#f5f5f5ff'}}
+                >
+                  <MenuItem value="price">Price</MenuItem>
+                  <MenuItem value="distance">Distance</MenuItem>
+                  <MenuItem value="time">Travel Time</MenuItem>
+                </Select>
+                <FormHelperText id="sort-label">Sort by</FormHelperText>
+              </FormControl>
+            </Item>
+            <Item>
+              <FormControl sx={{ m: 1, minWidth: 120 }}>
+                <Select
+                  labelId="sort-order-label"
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  sx={{ backgroundColor: '#f5f5f5ff'}}
+                >
+                  <MenuItem value="ascending">Ascending</MenuItem>
+                  <MenuItem value="descending">Descending</MenuItem>
+                </Select>
+                <FormHelperText id="sort-order-label">Sort order</FormHelperText>
+              </FormControl>
+            </Item>
+          </Stack>
+        </Item>
+        <Item>
+          {routes.length > 0 ? (
+            routes.map((route) => (
+              <div
+                key={route.legId}
+                style={{
+                  margin: "10px",
+                  padding: "10px",
+                  borderRadius: "5px",
+                }}
+              >
+                <br></br>
+                <h3>
+                  {route.from} → {route.to}
+                </h3>
+                <p>Distance: {route.distance.toLocaleString()} km</p>
+                <h4>Providers:</h4>
+                  {route.providers.map((p, index) => (
+                    <Accordion key={p.companyName + index} sx={{ backgroundColor: '#f5f5f5ff'}}>
+                      <AccordionSummary
+                      expandIcon={<ExpandMoreIcon />}
+                      aria-controls="panel1-content"
+                      id="panel1-header"
                     >
-                      <div>
-                        <TextField
-                          required
-                          id="first-name"
-                          label="First Name"
-                          onChange={(event) => setFirstName(event.target.value)}
-                        />
-                        <TextField
-                          required
-                          id="last-name"
-                          label="Last Name"
-                          onChange={(event) => setLastName(event.target.value)}
-                        />
-                        <Button
-                          variant="outlined"
+                      <ListItemText
+                        primary={`${p.companyName} - $${p.price.toLocaleString()}`}
+                        secondary={`${p.travelTimeHours}h ${p.travelTimeMinutes}m`}
+                      />
+                        </AccordionSummary>
+                      <AccordionDetails>
+                      <Box
+                        component="form"
+                        sx={{ '& .MuiTextField-root': { m: 1, width: '25ch' } }}
+                        noValidate
+                        autoComplete="off"
+                      >
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <TextField
+                            required
+                            id="first-name"
+                            label="First Name"
+                            onChange={(event) => setFirstName(event.target.value)}
+                          />
+                          <TextField
+                            required
+                            id="last-name"
+                            label="Last Name"
+                            onChange={(event) => setLastName(event.target.value)}
+                          />
+                          <Button
+                            variant="outlined"
+                            color="dark grey"
                             onClick={() => placeReservation(
-                            firstName,
-                            lastName,
-                            route.legId,
-                            p.price,
-                            `${p.travelTimeHours}h ${p.travelTimeMinutes}m`,
-                            p.companyName
-                          )}
-                        >
-                          Place reservation
-                        </Button>
-                      </div>
-                    </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                ))}
-            </div>
-          ))
-        ) : (
-          <p>No routes found.</p>
-          )}
-      </div>
-    </div>
+                              firstName,
+                              lastName,
+                              route.legId,
+                              p.price,
+                              `${p.travelTimeHours}h ${p.travelTimeMinutes}m`,
+                              p.companyName
+                            )}
+                          >
+                            Place reservation
+                          </Button>
+                        </Stack>
+                      </Box>
+                      </AccordionDetails>
+                    </Accordion>
+                  ))}
+              </div>
+            ))
+          ) : (
+            <p>No routes found.</p>
+            )}
+          </Item>
+      </Stack>
+    </Box>
   );
 }
 
