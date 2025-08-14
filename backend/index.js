@@ -187,7 +187,7 @@ app.post(
 app.get("/", async (req, res) => {
   await fetchData();
   cleanInvalidReservations()
-  res.json(currentData);
+  res.json(rawData);
 });
 
 app.listen(PORT, () => {
