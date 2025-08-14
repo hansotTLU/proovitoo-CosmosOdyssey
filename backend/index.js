@@ -75,9 +75,23 @@ async function fetchData() {
   }
 }
 
+function cleanInvalidReservations() {
+  reservations = reservations.filter(reservation => {
+    const routeExists = currentData.some(leg => {
+      if (leg.legId !== reservation.route) return false;
+
+      return leg.providers.some(p => p.companyName === reservation.chosenCompany);
+    });
+
+    return routeExists;
+  });
+}
+
+
 
 app.use("/routes", async (req, res) => {
   await fetchData();
+  cleanInvalidReservations()
 
   // Filters
   const { from, to, company, sortField, sortOrder } = req.query;
@@ -143,6 +157,9 @@ app.post(
     body("chosenCompany").notEmpty().withMessage("Company is required").escape(),
   ],
   (req, res) => {
+    fetchData();
+    cleanInvalidReservations()
+
     const result = validationResult(req);
     if (!result.isEmpty()) {
       return res.status(400).json({ errors: result.array() });
@@ -169,6 +186,7 @@ app.post(
 
 app.get("/", async (req, res) => {
   await fetchData();
+  cleanInvalidReservations()
   res.json(currentData);
 });
 
