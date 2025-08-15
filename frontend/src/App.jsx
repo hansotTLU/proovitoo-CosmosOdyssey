@@ -135,6 +135,7 @@ function App() {
         if (response.ok) {
           console.log("Success", response);
           console.log("Successfully placed a reservation!");
+          window.location.reload(false);
         } else {
           console.warn("No success");
           console.log("Failed to place a reservation");
