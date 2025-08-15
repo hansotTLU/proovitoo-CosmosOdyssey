@@ -21,6 +21,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import CircularProgress from '@mui/material/CircularProgress';
 import { styled } from '@mui/material/styles';
 
 function App() {
@@ -37,12 +38,12 @@ function App() {
   const [sortField, setSortField] = useState("price");
   const [sortOrder, setSortOrder] = useState("ascending");
 
-  // Reservation
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [loadingRoutes, setLoadingRoutes] = useState(true);
+  const [loadingReservations, setLoadingReservations] = useState(true);
 
 
   useEffect(() => {
+    setLoadingRoutes(true);
     fetch(`http://localhost:8080/routes`)
       .then(res => res.json())
       .then(data => {
@@ -59,16 +60,19 @@ function App() {
         setAllPlanets(planets);
         setAllCompanies(companies);
       })
-      .catch(err => console.error("Error fetching routes:", err));
+      .catch(err => console.error("Error fetching routes:", err))
+      .finally(() => setLoadingRoutes(false));
   }, []);
 
   useEffect(() => {
+    setLoadingReservations(true);
     fetch(`http://localhost:8080/reservations`)
       .then(res => res.json())
       .then(data => {
         setReservations(data || []);
       })
-      .catch(err => console.error("Error fetching reservations:", err));
+      .catch(err => console.error("Error fetching reservations:", err))
+      .finally(() => setLoadingReservations(false));
   }, []);
 
   useEffect(() => {
@@ -192,37 +196,46 @@ function App() {
             }).replace('T', ' ')}
           </p>
         </Item>
+
+        {/* RESERVATIONS */}
         <Item>
           <h2>Reservations</h2>
-          <TableContainer component={Paper}>
-            <Table sx={{ minWidth: 650 }} aria-label="reservation table">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell align="right">Route</TableCell>
-                  <TableCell align="right">Price</TableCell>
-                  <TableCell align="right">Time</TableCell>
-                  <TableCell align="right">Company</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {reservations.map((reservation) => (
-                  <TableRow key={reservation.name}>
-                    <TableCell component="th" scope="row">
-                      {reservation.firstName} {reservation.lastName}
-                    </TableCell>
-                    <TableCell align="right">{getRouteName(reservation.route)}</TableCell>
-                    <TableCell align="right">{reservation.price.toLocaleString()}</TableCell>
-                    <TableCell align="right">{reservation.time}</TableCell>
-                    <TableCell align="right">{reservation.chosenCompany}</TableCell>
+          {loadingReservations ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table sx={{ minWidth: 650 }} aria-label="reservation table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell align="right">Route</TableCell>
+                    <TableCell align="right">Price</TableCell>
+                    <TableCell align="right">Time</TableCell>
+                    <TableCell align="right">Company</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {reservations.map((reservation) => (
+                    <TableRow key={reservation.name}>
+                      <TableCell component="th" scope="row">
+                        {reservation.firstName} {reservation.lastName}
+                      </TableCell>
+                      <TableCell align="right">{getRouteName(reservation.route)}</TableCell>
+                      <TableCell align="right">{reservation.price.toLocaleString()}</TableCell>
+                      <TableCell align="right">{reservation.time}</TableCell>
+                      <TableCell align="right">{reservation.chosenCompany}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </Item>
+
+        {/* FILTERS */}
         <Item>
-          {/* Filters */}
           <Stack direction="row" spacing={1} alignItems="center">
             <Item>
               <FormControl sx={{ m: 1, minWidth: 120}}>
@@ -308,57 +321,65 @@ function App() {
             </Item>
           </Stack>
         </Item>
+
+        {/* ROUTES */}
         <Item>
-          {routes.length > 0 ? (
-            routes.map((route) => (
-              <div
-                key={route.legId}
-                style={{
-                  margin: "10px",
-                  padding: "10px",
-                  borderRadius: "5px",
-                }}
-              >
-                <br></br>
-                <h3>
-                  {route.from} → {route.to}
-                </h3>
-                <p>Distance: {route.distance.toLocaleString()} km</p>
-                <h4>Providers:</h4>
-                  {route.providers.map((p, index) => (
-                    <Accordion key={p.companyName + index} sx={{ backgroundColor: '#f5f5f5ff'}}>
-                      <AccordionSummary
-                      expandIcon={<ExpandMoreIcon />}
-                      aria-controls="panel1-content"
-                      id="panel1-header"
-                    >
-                      <ListItemText
-                        primary={`${p.companyName} - $${p.price.toLocaleString()}`}
-                        secondary={`${p.travelTimeHours}h ${p.travelTimeMinutes}m`}
-                      />
-                        </AccordionSummary>
-                      <AccordionDetails>
-                      <Box
-                        component="form"
-                        sx={{ '& .MuiTextField-root': { m: 1, width: '25ch' } }}
-                        noValidate
-                        autoComplete="off"
-                      >
-                        <ReservationForm
-                          route={route}
-                          provider={p}
-                          onReserve={(firstName, lastName) =>
-                            placeReservation(firstName, lastName, route.legId, p.price, `${p.travelTimeHours}h ${p.travelTimeMinutes}m`, p.companyName)
-                          }
-                        />
-                      </Box>
-                      </AccordionDetails>
-                    </Accordion>
-                  ))}
-              </div>
-            ))
-          ) : (
-            <p>No routes found.</p>
+           {loadingRoutes ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              routes.length > 0 ? (
+                routes.map((route) => (
+                  <div
+                    key={route.legId}
+                    style={{
+                      margin: "10px",
+                      padding: "10px",
+                      borderRadius: "5px",
+                    }}
+                  >
+                    <br></br>
+                    <h3>
+                      {route.from} → {route.to}
+                    </h3>
+                    <p>Distance: {route.distance.toLocaleString()} km</p>
+                    <h4>Providers:</h4>
+                      {route.providers.map((p, index) => (
+                        <Accordion key={p.companyName + index} sx={{ backgroundColor: '#f5f5f5ff'}}>
+                          <AccordionSummary
+                          expandIcon={<ExpandMoreIcon />}
+                          aria-controls="panel1-content"
+                          id="panel1-header"
+                        >
+                          <ListItemText
+                            primary={`${p.companyName} - $${p.price.toLocaleString()}`}
+                            secondary={`${p.travelTimeHours}h ${p.travelTimeMinutes}m`}
+                          />
+                            </AccordionSummary>
+                          <AccordionDetails>
+                          <Box
+                            component="form"
+                            sx={{ '& .MuiTextField-root': { m: 1, width: '25ch' } }}
+                            noValidate
+                            autoComplete="off"
+                          >
+                            <ReservationForm
+                              route={route}
+                              provider={p}
+                              onReserve={(firstName, lastName) =>
+                                placeReservation(firstName, lastName, route.legId, p.price, `${p.travelTimeHours}h ${p.travelTimeMinutes}m`, p.companyName)
+                              }
+                            />
+                          </Box>
+                          </AccordionDetails>
+                        </Accordion>
+                      ))}
+                  </div>
+                ))
+              ) : (
+                  <p>No routes found.</p>
+              )
             )}
           </Item>
       </Stack>
