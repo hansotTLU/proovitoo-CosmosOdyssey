@@ -15,6 +15,12 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 import { styled } from '@mui/material/styles';
 
 function App() {
@@ -22,6 +28,7 @@ function App() {
   const [validUntil, setValidUntil] = useState("");
   const [allPlanets, setAllPlanets] = useState([]);
   const [allCompanies, setAllCompanies] = useState([]);
+  const [reservations, setReservations] = useState([]);
 
   // Filters
   const [from, setFrom] = useState("");
@@ -56,6 +63,15 @@ function App() {
   }, []);
 
   useEffect(() => {
+    fetch(`http://localhost:8080/reservations`)
+      .then(res => res.json())
+      .then(data => {
+        setReservations(data || []);
+      })
+      .catch(err => console.error("Error fetching reservations:", err));
+  }, []);
+
+  useEffect(() => {
     const params = new URLSearchParams();
     if (from) params.append("from", from);
     if (to) params.append("to", to);
@@ -73,15 +89,23 @@ function App() {
   }, [from, to, company, sortField, sortOrder]);
 
   const Item = styled(Paper)(({ theme }) => ({
-    backgroundColor: '#778DA5',
+    backgroundColor: '#738ca8ff',
     ...theme.typography.body2,
     padding: theme.spacing(1),
     textAlign: 'center',
     color: (theme.vars ?? theme).palette.text.secondary,
     ...theme.applyStyles('dark', {
-      backgroundColor: '#1A2027',
+      backgroundColor: '#1a2027ff',
     }),
   }));
+
+  function getRouteName(routeId) {
+    const leg = routes.find(l => l.legId === routeId);
+    if (leg) {
+      return `${leg.from} → ${leg.to}`;
+    };
+    return routeId;
+  };
   
   const placeReservation = async (firstName, lastName, legId, price, time, chosenCompany) => {
     if (!firstName || !lastName) {
@@ -135,6 +159,35 @@ function App() {
               hour12: false
             }).replace('T', ' ')}
           </p>
+        </Item>
+        <Item>
+          <h2>Reservations</h2>
+          <TableContainer component={Paper}>
+            <Table sx={{ minWidth: 650 }} aria-label="reservation table">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell align="right">Route</TableCell>
+                  <TableCell align="right">Price</TableCell>
+                  <TableCell align="right">Time</TableCell>
+                  <TableCell align="right">Company</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {reservations.map((reservation) => (
+                  <TableRow key={reservation.name}>
+                    <TableCell component="th" scope="row">
+                      {reservation.firstName} {reservation.lastName}
+                    </TableCell>
+                    <TableCell align="right">{getRouteName(reservation.route)}</TableCell>
+                    <TableCell align="right">{reservation.price.toLocaleString()}</TableCell>
+                    <TableCell align="right">{reservation.time}</TableCell>
+                    <TableCell align="right">{reservation.chosenCompany}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Item>
         <Item>
           {/* Filters */}
