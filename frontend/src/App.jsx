@@ -72,20 +72,24 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (from) params.append("from", from);
-    if (to) params.append("to", to);
-    if (company) params.append("company", company);
-    if (sortField) params.append("sortField", sortField);
-    if (sortOrder) params.append("sortOrder", sortOrder);
-  
-    fetch(`http://localhost:8080/routes?${params.toString()}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setRoutes(data.routes);
-        setValidUntil(data.validUntil);
-      })
-      .catch((err) => console.error("Error fetching routes:", err));
+    const handler = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (from) params.append("from", from);
+      if (to) params.append("to", to);
+      if (company) params.append("company", company);
+      if (sortField) params.append("sortField", sortField);
+      if (sortOrder) params.append("sortOrder", sortOrder);
+    
+      fetch(`http://localhost:8080/routes?${params.toString()}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setRoutes(data.routes);
+          setValidUntil(data.validUntil);
+        })
+        .catch((err) => console.error("Error fetching routes:", err));
+    }, 500);
+
+    return () => clearTimeout(handler);
   }, [from, to, company, sortField, sortOrder]);
 
   const Item = styled(Paper)(({ theme }) => ({
@@ -141,6 +145,33 @@ function App() {
       }
     }
   };
+
+  function ReservationForm({ onReserve }) {
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+
+    return (
+      <Stack direction="row" spacing={1} alignItems="center">
+        <TextField
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          label="First Name"
+        />
+        <TextField
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          label="Last Name"
+        />
+        <Button
+          variant="outlined"
+          color="dark grey"
+          onClick={() => onReserve(firstName, lastName)}
+        >
+          Place reservation
+        </Button>
+      </Stack>
+    );
+  }
 
 
   return (
@@ -312,34 +343,13 @@ function App() {
                         noValidate
                         autoComplete="off"
                       >
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <TextField
-                            required
-                            id="first-name"
-                            label="First Name"
-                            onChange={(event) => setFirstName(event.target.value)}
-                          />
-                          <TextField
-                            required
-                            id="last-name"
-                            label="Last Name"
-                            onChange={(event) => setLastName(event.target.value)}
-                          />
-                          <Button
-                            variant="outlined"
-                            color="dark grey"
-                            onClick={() => placeReservation(
-                              firstName,
-                              lastName,
-                              route.legId,
-                              p.price,
-                              `${p.travelTimeHours}h ${p.travelTimeMinutes}m`,
-                              p.companyName
-                            )}
-                          >
-                            Place reservation
-                          </Button>
-                        </Stack>
+                        <ReservationForm
+                          route={route}
+                          provider={p}
+                          onReserve={(firstName, lastName) =>
+                            placeReservation(firstName, lastName, route.legId, p.price, `${p.travelTimeHours}h ${p.travelTimeMinutes}m`, p.companyName)
+                          }
+                        />
                       </Box>
                       </AccordionDetails>
                     </Accordion>
